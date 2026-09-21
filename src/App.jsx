@@ -23,6 +23,9 @@ const TABS = [
   { id: 'settings', label: 'Pengaturan', icon: Settings, View: SettingsView },
 ]
 
+// Set memori di luar komponen agar nilainya tetap tersimpan dan tahan dari re-render/Strict Mode
+const processedReminders = new Set()
+
 function StatusPill() {
   const { mode, online } = useApp()
   const state = !online ? 'offline' : mode === 'firebase' ? 'live' : 'local'
@@ -53,11 +56,17 @@ function Shell() {
     const unsubscribe = store.subscribe('reminders', (reminders) => {
       if (!reminders || reminders.length === 0) return
 
-      const latest = reminders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+      // Salin array sebelum di-sort agar tidak memutasi state bawaan
+      const latest = [...reminders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+      if (!latest?.id) return
+
       const lastNotifiedId = localStorage.getItem('ctr:last_rem_id')
 
-      if (latest && latest.id !== lastNotifiedId) {
+      // Cegah eksekusi ganda menggunakan pengunci Set LOKAL dan LocalStorage
+      if (latest.id !== lastNotifiedId && !processedReminders.has(latest.id)) {
+        processedReminders.add(latest.id)
         localStorage.setItem('ctr:last_rem_id', latest.id)
+
         showSystemNotification(latest.title, {
           body: latest.body,
           tag: latest.id,
@@ -66,7 +75,9 @@ function Shell() {
       }
     })
 
-    return () => unsubscribe?.()
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
   }, [store])
 
   if (!ready) {
