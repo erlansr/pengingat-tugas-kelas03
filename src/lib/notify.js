@@ -12,7 +12,7 @@ export async function requestNotifPermission() {
   }
 }
 
-/** Notifikasi sistem via service worker (bisa diklik saat app di latar belakang). */
+/** Notifikasi sistem via service worker (bisa diklik saat app di latar belakang) */
 export async function showSystemNotification(title, options = {}) {
   if (!notifSupported() || Notification.permission !== 'granted') return false
   const opts = { icon, badge: icon, ...options }
