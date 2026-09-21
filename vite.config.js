@@ -2,11 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Set VITE_BASE=/nama-repo/ jika di-deploy ke subfolder (mis. GitHub Pages)
-const base = process.env.VITE_BASE || '/'
-
 export default defineConfig({
-  base,
+  base: '/',
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +14,8 @@ export default defineConfig({
         short_name: 'Tugas Kelas',
         description: 'Daftar tugas, kalender, dan pengumuman kelas dalam satu aplikasi.',
         lang: 'id',
-        start_url: base,
-        scope: base,
+        start_url: '/',
+        scope: '/',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#F8FAFC',
@@ -31,9 +28,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // handler klik notifikasi (fokus/buka aplikasi)
+        // Hanya importScript jika file public/sw-extra.js benar-benar ada
         importScripts: ['sw-extra.js'],
-        navigateFallback: `${base}index.html`,
+        navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,ico}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         cleanupOutdatedCaches: true,
