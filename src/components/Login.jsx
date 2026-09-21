@@ -51,7 +51,7 @@ export default function Login() {
         />
 
         {role === 'mahasiswa' ? (
-          <Field label="NIM Mahasiswa" hint="Masukkan NIM Anda yang telah terdaftar di kelas.">
+          <Field label="NIM Mahasiswa" hint="Masukkan PIN Anda yang telah terdaftar di kelas.">
             <input 
               className={inputCls} 
               value={nim} 
