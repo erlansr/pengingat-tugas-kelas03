@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// Aturan dasar: hanya pengguna yang sudah masuk (anonymous auth dari aplikasi) yang boleh baca/tulis.
+// CATATAN KEAMANAN: peran "Ketua Kelas" di aplikasi ini dijaga PIN di sisi klien, sehingga bukan
+// batas keamanan yang sesungguhnya. Untuk penggunaan serius, lihat bagian "Memperketat keamanan"
+// di README (custom claim `ketua`) dan aktifkan blok yang dikomentari di bawah.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    // function isKetua() { return signedIn() && request.auth.token.ketua == true; }
+
+    match /tasks/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200;
+      allow delete: if signedIn();
+      // Versi ketat:  allow write: if isKetua();
+    }
+
+    match /announcements/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 200;
+      allow delete: if signedIn();
+      // Versi ketat:  allow write: if isKetua();
+    }
+
+    match /students/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['id', 'name', 'nim', 'joinedAt']);
+      allow delete: if false;
+    }
+
+    match /completions/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['id', 'studentId', 'taskId', 'doneAt']);
+      allow delete: if signedIn();
+    }
+  }
+}

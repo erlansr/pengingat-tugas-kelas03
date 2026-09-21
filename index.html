@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pengingat Tugas Kelas</title>
+    <meta name="description" content="Daftar tugas, kalender, dan pengumuman kelas dalam satu aplikasi." />
+    <meta name="theme-color" content="#F8FAFC" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Tugas Kelas" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script>
+      // Terapkan tema sebelum render agar tidak berkedip
+      try {
+        var t = localStorage.getItem('ctr:theme') || 'system';
+        if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
