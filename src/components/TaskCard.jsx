@@ -55,10 +55,10 @@ export default function TaskCard({ task, now }) {
       await store.set('reminders', remId, reminderData)
 
       // 3. Pemicu lokal langsung untuk device Ketua Kelas sendiri
-      showSystemNotification(reminderData.title, {
-        body: reminderData.body,
-        tag: remId
-      })
+    //  showSystemNotification(reminderData.title, {
+        //body: reminderData.body,
+      //  tag: remId
+      //})
 
       alert('✅ Pengingat berhasil disiarkan ke seluruh kelas!')
     } catch (err) {
