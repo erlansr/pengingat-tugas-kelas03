@@ -4,6 +4,7 @@ import { AppProvider, useApp } from './context'
 import { useReminders } from './hooks/useReminders'
 import { CLASS_NAME } from './lib/constants'
 import { cx } from './lib/utils'
+import { showSystemNotification } from './lib/notify'
 import { Logo } from './components/ui'
 import Login from './components/Login'
 import Toasts from './components/Toasts'
@@ -40,10 +41,33 @@ function StatusPill() {
 }
 
 function Shell() {
-  const { ready, profile, role, theme, unreadAnnouncements } = useApp()
+  const { ready, profile, role, theme, unreadAnnouncements, store } = useApp()
   const [tab, setTab] = useState('tasks')
-  useEffect(() => setTab('tasks'), [profile?.id]) // akun baru selalu mulai dari daftar tugas
+  useEffect(() => setTab('tasks'), [profile?.id])
   useReminders()
+
+  // Listener Notifikasi Realtime dari Firebase
+  useEffect(() => {
+    if (!store || store.mode !== 'firebase') return
+
+    const unsubscribe = store.subscribe('reminders', (reminders) => {
+      if (!reminders || reminders.length === 0) return
+
+      const latest = reminders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+      const lastNotifiedId = localStorage.getItem('ctr:last_rem_id')
+
+      if (latest && latest.id !== lastNotifiedId) {
+        localStorage.setItem('ctr:last_rem_id', latest.id)
+        showSystemNotification(latest.title, {
+          body: latest.body,
+          tag: latest.id,
+          data: { url: '/' }
+        })
+      }
+    })
+
+    return () => unsubscribe?.()
+  }, [store])
 
   if (!ready) {
     return (
