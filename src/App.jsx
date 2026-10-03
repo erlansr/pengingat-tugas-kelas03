@@ -11,6 +11,7 @@ import Toasts from './components/Toasts'
 import TaskForm from './components/TaskForm'
 import TaskProgress from './components/TaskProgress'
 import { InstallBanner, InstallGuide } from './components/Install'
+import ChatLauncher from './components/ChatLauncher'
 import TasksView from './views/TasksView'
 import ScheduleView from './views/ScheduleView'
 import CalendarView from './views/CalendarView'
@@ -155,6 +156,7 @@ function Shell() {
       <TaskForm />
       <TaskProgress />
       <InstallGuide />
+      <ChatLauncher />
       <Toasts />
     </div>
   )
