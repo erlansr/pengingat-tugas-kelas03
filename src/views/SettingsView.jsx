@@ -1,4 +1,5 @@
-import { Bell, BellOff, Cloud, Database, Download, LogOut, Monitor, Moon, RotateCcw, Smartphone, Sun } from 'lucide-react'
+import { Bell, BellOff, Cloud, Database, Download, LogOut, Monitor, Moon, RotateCcw, Smartphone, Sun, RefreshCw, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../context'
 import { useInstall } from '../hooks/useInstall'
 import { Button, Segmented, Toggle } from '../components/ui'
@@ -19,8 +20,11 @@ export default function SettingsView() {
   const {
     profile, role, logout, theme, reminders, setReminders, permission, enableNotifications,
     pushToast, mode, online, setGuideOpen, resetLocalData,
+    celoeCalendarUrl, saveCeloeCalendarUrl, syncCeloeCalendar, celoeSyncing, celoeLastSync,
   } = useApp()
   const install = useInstall()
+  const [calendarDraft, setCalendarDraft] = useState(celoeCalendarUrl)
+  useEffect(() => setCalendarDraft(celoeCalendarUrl), [celoeCalendarUrl])
 
   const toggleReminders = async (on) => {
     if (on && notifSupported() && permission === 'default') await enableNotifications()
@@ -110,6 +114,56 @@ export default function SettingsView() {
             <Button variant={install.canPrompt ? 'outline' : 'primary'} onClick={() => setGuideOpen(true)}>Lihat panduan</Button>
           </div>
         )}
+      </Section>
+
+      <Section title="Sinkronisasi LMS CeLOE">
+        <p className="mb-3 text-sm text-muted">
+          Masukkan Calendar URL pribadi dari CeLOE. Aplikasi akan memeriksa kalender saat dibuka atau kembali aktif, lalu setiap 5 menit selama aplikasi terbuka.
+        </p>
+        <label htmlFor="celoe-calendar-url" className="mb-1.5 block text-sm font-semibold">Calendar URL pribadi</label>
+        <input
+          id="celoe-calendar-url"
+          type="url"
+          autoComplete="off"
+          spellCheck={false}
+          value={calendarDraft}
+          onChange={(e) => setCalendarDraft(e.target.value)}
+          placeholder="Tempel Calendar URL CeLOE di sini"
+          className="h-11 w-full rounded-lg border border-line bg-surface px-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/25"
+        />
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => {
+            saveCeloeCalendarUrl(calendarDraft)
+            pushToast({ title: 'Calendar URL disimpan', body: 'URL hanya tersimpan di browser dan profil ini.' })
+          }}>
+            Simpan URL
+          </Button>
+          <Button disabled={celoeSyncing || !calendarDraft.trim()} onClick={async () => {
+            saveCeloeCalendarUrl(calendarDraft)
+            try { await syncCeloeCalendar({ calendarUrl: calendarDraft }) } catch {}
+          }}>
+            <RefreshCw className={`h-4 w-4 ${celoeSyncing ? 'animate-spin' : ''}`} />
+            {celoeSyncing ? 'Menyinkronkan…' : 'Sinkronkan sekarang'}
+          </Button>
+          {!!calendarDraft && (
+            <Button variant="outline" onClick={() => {
+              setCalendarDraft('')
+              saveCeloeCalendarUrl('')
+              pushToast({ title: 'Calendar URL dihapus', body: 'Sinkronisasi otomatis CeLOE dimatikan.' })
+            }}>
+              <Trash2 className="h-4 w-4" />Hapus URL
+            </Button>
+          )}
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          {celoeLastSync ? 'Sinkronisasi terakhir: ' + new Date(celoeLastSync).toLocaleString('id-ID') : 'Belum pernah disinkronkan.'}
+        </p>
+        {mode !== 'firebase' && (
+          <p className="mt-2 rounded-lg bg-sunken p-3 text-sm">
+            Aktifkan Firebase pada aplikasi dan atur FIREBASE_SERVICE_ACCOUNT_JSON di Vercel sebelum sinkronisasi.
+          </p>
+        )}
+        <p className="mt-2 text-xs text-muted">Jangan bagikan Calendar URL. URL ini memberi akses ke kalender pribadi Anda.</p>
       </Section>
 
       <Section title="Data & sinkronisasi">

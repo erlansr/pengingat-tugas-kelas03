@@ -13,6 +13,7 @@ export default function TaskCard({ task, now }) {
   const [sendingReminder, setSendingReminder] = useState(false)
 
   const isKetua = role === 'ketua'
+  const isCeloeTask = task.source === 'celoe'
   const done = !isKetua && isDone(task.id)
   const rel = relativeDeadline(task.deadline, now)
   const pr = PRIORITY[task.priority] || PRIORITY.medium
@@ -137,7 +138,9 @@ export default function TaskCard({ task, now }) {
               <p className="whitespace-pre-line text-sm leading-relaxed">
                 {task.description || <span className="text-muted">Tidak ada keterangan tambahan.</span>}
               </p>
-              {isKetua && (
+              {isCeloeTask && <p className="mt-2 text-xs font-semibold text-muted">Diimpor dari kalender CeLOE</p>}
+              {isCeloeTask && task.url && <a className="mt-2 inline-block text-sm font-semibold text-accent underline" href={task.url} target="_blank" rel="noreferrer">Buka di LMS</a>}
+              {isKetua && !isCeloeTask && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={() => setDetailTaskId(task.id)}>
                     <BarChart3 className="h-4 w-4" />Progres
