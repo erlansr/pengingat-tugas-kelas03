@@ -157,7 +157,8 @@ export function AppProvider({ children }) {
   const syncCeloeCalendar = useCallback(async ({ silent = false, calendarUrl = '' } = {}) => {
     if (!profile?.id) throw new Error('Masuk ke aplikasi terlebih dahulu.')
     if (store?.mode !== 'firebase') throw new Error('Firebase belum aktif. Sinkronisasi CeLOE memerlukan Firebase Auth.')
-    const urlToSync = (calendarUrl || celoeCalendarUrl).trim()\n    if (!urlToSync) throw new Error('Masukkan Calendar URL CeLOE di Pengaturan.')
+    const urlToSync = (calendarUrl || celoeCalendarUrl).trim()
+    if (!urlToSync) throw new Error('Masukkan Calendar URL CeLOE di Pengaturan.')
     if (!online) throw new Error('Perangkat sedang offline.')
 
     setCeloeSyncing(true)
