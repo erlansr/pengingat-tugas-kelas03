@@ -1,5 +1,5 @@
 import { Bell, BellOff, Cloud, Database, Download, LogOut, Monitor, Moon, RotateCcw, Smartphone, Sun, RefreshCw, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../context'
 import { useInstall } from '../hooks/useInstall'
 import { Button, Segmented, Toggle } from '../components/ui'
@@ -24,6 +24,7 @@ export default function SettingsView() {
   } = useApp()
   const install = useInstall()
   const [calendarDraft, setCalendarDraft] = useState(celoeCalendarUrl)
+  useEffect(() => setCalendarDraft(celoeCalendarUrl), [celoeCalendarUrl])
 
   const toggleReminders = async (on) => {
     if (on && notifSupported() && permission === 'default') await enableNotifications()
