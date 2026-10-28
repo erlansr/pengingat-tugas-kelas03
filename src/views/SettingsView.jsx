@@ -139,7 +139,7 @@ export default function SettingsView() {
           </Button>
           <Button disabled={celoeSyncing || !calendarDraft.trim()} onClick={async () => {
             saveCeloeCalendarUrl(calendarDraft)
-            try { await syncCeloeCalendar() } catch {}
+            try { await syncCeloeCalendar({ calendarUrl: calendarDraft }) } catch {}
           }}>
             <RefreshCw className={`h-4 w-4 ${celoeSyncing ? 'animate-spin' : ''}`} />
             {celoeSyncing ? 'Menyinkronkan…' : 'Sinkronkan sekarang'}
