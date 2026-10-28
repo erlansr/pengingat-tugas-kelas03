@@ -73,7 +73,6 @@ export default function TasksView() {
       ? activeTasks.reduce((s, t) => s + (progressByTask[t.id] || 0), 0) / (students.length * activeTasks.length)
       : 0
 
-  const lmsCalendarUrl = import.meta.env.VITE_LMS_CALENDAR_URL || "https://lms.telkomuniversity.ac.id/calendar/export_execute.php?userid=138491&authtoken=501640e4350fef0a71c136153b5f8f34067c11ae&preset_what=all&preset_time=recentupcoming"
 
   return (
     <div className="space-y-5">
@@ -126,14 +125,14 @@ export default function TasksView() {
         </div>
 
         <a
-          href={lmsCalendarUrl}
+          href="https://lms.telkomuniversity.ac.id/my/"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 py-1.5 text-[13px] font-semibold text-ink transition hover:bg-ink/5"
-          title="Buka atau Download Kalender LMS"
+          title="Buka LMS Telkom University"
         >
           <Calendar className="h-4 w-4 text-muted" />
-          Kalender LMS
+          Buka LMS
         </a>
 
         {isKetua && (
