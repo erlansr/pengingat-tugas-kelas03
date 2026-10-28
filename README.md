@@ -12,6 +12,7 @@ Dibuat dengan React 18, Vite, Tailwind CSS 3, Firebase (Firestore), dan `vite-pl
 | Checklist pribadi | Centang tiap mahasiswa disimpan per NIM, jadi sama di semua perangkat. |
 | Progres kelas | Ketua melihat siapa yang sudah/belum mengumpulkan dan bisa menyalin daftar yang belum untuk dikirim ke grup WhatsApp. |
 | Sinkron realtime | Firestore `onSnapshot` dengan cache offline. Tanpa konfigurasi Firebase, aplikasi otomatis memakai penyimpanan lokal (sinkron antar-tab). |
+| Kalender CeLOE | Impor kalender pribadi dari URL iCalendar, cek saat aplikasi dibuka/kembali aktif dan setiap 5 menit saat aplikasi terbuka. Data LMS disimpan lokal per profil, tidak dibagikan ke kelas. |
 | Kalender | Tampilan bulanan (minggu mulai Senin) dengan titik penanda tenggat dan daftar tugas per hari. |
 | Pengumuman | Sematkan, penanda "Baru", lencana jumlah belum dibaca. |
 | Pengingat otomatis | Web Notification API: H-1 hari, 3 jam, dan 1 jam sebelum tenggat untuk tugas yang belum dicentang, plus notifikasi pengumuman baru. |
@@ -63,6 +64,18 @@ completions/{id}    studentId, taskId, doneAt        (id = "<studentId>_<taskId>
 ```
 
 Checklist disimpan sebagai dokumen `completions` tersendiri, bukan array di dalam tugas. Dengan begitu dua mahasiswa yang mencentang bersamaan tidak saling menimpa.
+
+## Sinkronisasi kalender LMS CeLOE
+
+1. Deploy aplikasi ke Vercel dan pastikan Firebase Auth **Anonymous** aktif.
+2. Di Firebase Console → Project settings → Service accounts, buat/gunakan service account untuk proyek yang sama. Simpan JSON service account sebagai environment variable Vercel bernama `FIREBASE_SERVICE_ACCOUNT_JSON` (Production dan Preview jika diperlukan). Jangan masukkan file JSON ke repo.
+3. Deploy ulang setelah menambahkan environment variable.
+4. Masuk ke aplikasi, buka **Pengaturan → Sinkronisasi LMS CeLOE**, tempel Calendar URL pribadi dari CeLOE, lalu klik **Sinkronkan sekarang**.
+5. Setelah berhasil, sinkronisasi otomatis dilakukan ketika aplikasi dibuka/kembali aktif dan tiap 5 menit selama tab terlihat.
+
+**Keamanan:** Calendar URL mengandung token pribadi. Jangan taruh di kode, `.env` berawalan `VITE_`, screenshot publik, atau GitHub. Simpan hanya di perangkat sendiri. Bila URL pernah terpublikasi, cabut/buat ulang token di CeLOE jika tersedia. Endpoint hanya menerima HTTPS dari host `lms.telkomuniversity.ac.id` dan memverifikasi Firebase ID token sebelum mengambil kalender.
+
+**Batasan:** kalender CeLOE bukan webhook. Pembaruan baru terlihat saat pemeriksaan berikutnya; interval 5 menit adalah near-real-time, bukan real-time seketika. Acara impor bersifat pribadi pada browser/profil tersebut dan tidak muncul otomatis di perangkat teman sekelas. Aplikasi tidak menyinkronkan saat ditutup.
 
 ## Cara kerja pengingat
 
