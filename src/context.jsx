@@ -3,6 +3,7 @@ import { createFirebaseStore, createLocalStore, isFirebaseConfigured, resetLocal
 import { KETUA_PIN } from './lib/constants'
 import { loadJSON, saveJSON, slug, uid } from './lib/utils'
 import { readNotifPermission, requestNotifPermission } from './lib/notify'
+import { fetchCeloeCalendar } from './lib/celoe.js'
 
 const Ctx = createContext(null)
 export const useApp = () => useContext(Ctx)
@@ -39,6 +40,13 @@ export function AppProvider({ children }) {
   const storeRef = useRef(null)
   const [profile, setProfile] = useState(() => loadJSON('ctr:profile', null))
   const [tasks, setTasks] = useState([])
+  const [celoeTasks, setCeloeTasks] = useState([])
+  const [celoeCalendarUrl, setCeloeCalendarUrlState] = useState(() => {
+    const savedProfile = loadJSON('ctr:profile', null)
+    return savedProfile?.id ? localStorage.getItem('ctr:celoe:url:' + savedProfile.id) || '' : ''
+  })
+  const [celoeSyncing, setCeloeSyncing] = useState(false)
+  const [celoeLastSync, setCeloeLastSync] = useState(null)
   const [announcements, setAnnouncements] = useState([])
   const [annLoaded, setAnnLoaded] = useState(false)
   const [students, setStudents] = useState([])
@@ -122,6 +130,80 @@ export function AppProvider({ children }) {
       fallbackToLocal('Sinkronisasi Firebase ditolak (cek aturan Firestore). Data hanya tersimpan di perangkat ini.')
     }
   }, [fallbackToLocal])
+
+  // Data CeLOE bersifat pribadi: simpan Calendar URL dan hasil impor per profil, bukan di Firestore kelas.
+  useEffect(() => {
+    if (!profile?.id) {
+      setCeloeTasks([])
+      setCeloeCalendarUrlState('')
+      setCeloeLastSync(null)
+      return
+    }
+    setCeloeCalendarUrlState(localStorage.getItem('ctr:celoe:url:' + profile.id) || '')
+    setCeloeTasks(loadJSON('ctr:celoe:events:' + profile.id, []))
+    setCeloeLastSync(loadJSON('ctr:celoe:lastSync:' + profile.id, null))
+  }, [profile?.id])
+
+  const saveCeloeCalendarUrl = useCallback((url) => {
+    const clean = url.trim()
+    setCeloeCalendarUrlState(clean)
+    if (profile?.id) {
+      const key = 'ctr:celoe:url:' + profile.id
+      if (clean) localStorage.setItem(key, clean)
+      else localStorage.removeItem(key)
+    }
+  }, [profile?.id])
+
+  const syncCeloeCalendar = useCallback(async ({ silent = false } = {}) => {
+    if (!profile?.id) throw new Error('Masuk ke aplikasi terlebih dahulu.')
+    if (store?.mode !== 'firebase') throw new Error('Firebase belum aktif. Sinkronisasi CeLOE memerlukan Firebase Auth.')
+    if (!celoeCalendarUrl) throw new Error('Masukkan Calendar URL CeLOE di Pengaturan.')
+    if (!online) throw new Error('Perangkat sedang offline.')
+
+    setCeloeSyncing(true)
+    try {
+      const result = await fetchCeloeCalendar(celoeCalendarUrl)
+      const imported = result.events.map((event) => ({
+        ...event,
+        source: 'celoe',
+        priority: 'medium',
+        createdBy: 'celoe-import',
+        createdAt: result.syncedAt,
+        updatedAt: result.syncedAt,
+      }))
+      saveJSON('ctr:celoe:events:' + profile.id, imported)
+      setCeloeTasks(imported)
+      saveJSON('ctr:celoe:lastSync:' + profile.id, result.syncedAt)
+      setCeloeLastSync(result.syncedAt)
+      if (!silent) pushToast({ tone: 'info', title: 'Kalender CeLOE tersinkron', body: imported.length + ' acara diperbarui.' })
+      return imported
+    } catch (error) {
+      if (!silent) pushToast({ tone: 'danger', title: 'Sinkronisasi LMS gagal', body: error.message || 'Coba lagi.' })
+      throw error
+    } finally {
+      setCeloeSyncing(false)
+    }
+  }, [profile?.id, store?.mode, celoeCalendarUrl, online, pushToast])
+
+  // Sinkronkan saat aplikasi dibuka/kembali aktif dan per 5 menit ketika tab terlihat.
+  useEffect(() => {
+    if (!profile?.id || !celoeCalendarUrl || store?.mode !== 'firebase' || !online) return
+    let active = true
+    let running = false
+    const syncSilently = () => {
+      if (!active || running || document.visibilityState !== 'visible') return
+      running = true
+      syncCeloeCalendar({ silent: true }).catch(() => {}).finally(() => { running = false })
+    }
+    syncSilently()
+    const timer = setInterval(syncSilently, 5 * 60 * 1000)
+    document.addEventListener('visibilitychange', syncSilently)
+    return () => {
+      active = false
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', syncSilently)
+    }
+  }, [profile?.id, celoeCalendarUrl, store?.mode, online, syncCeloeCalendar])
 
   /* ───── langganan realtime ───── */
   useEffect(() => {
@@ -266,10 +348,13 @@ export function AppProvider({ children }) {
     return res
   }, [])
 
+  const allTasks = useMemo(() => [...tasks, ...celoeTasks], [tasks, celoeTasks])
+
   const value = {
     theme, store, ready: !!store, mode: store?.mode, online,
     profile, role: profile?.role, login, logout,
-    tasks, announcements, annLoaded, students, completions,
+    tasks: allTasks, announcements, annLoaded, students, completions,
+    celoeCalendarUrl, saveCeloeCalendarUrl, syncCeloeCalendar, celoeSyncing, celoeLastSync,
     isDone, toggleDone, progressByTask,
     saveTask, deleteTask, saveAnnouncement, deleteAnnouncement, togglePin,
     annSeenAt, markAnnouncementsSeen, unreadAnnouncements,
