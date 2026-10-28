@@ -57,7 +57,7 @@ function parseCalendar(ics) {
     const uid = props.UID?.value?.trim()
     const start = props.DTSTART
     const end = props.DTEND
-    const deadline = parseIcsDate(end?.value || start?.value, end?.params || start?.params || '')
+    const deadline = parseIcsDate(start?.value || end?.value, start?.params || end?.params || '')
     if (!title || !deadline) continue
 
     const sourceKey = uid || `${title}| ${deadline}`
