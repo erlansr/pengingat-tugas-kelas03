@@ -144,6 +144,44 @@ export function AppProvider({ children }) {
     setCeloeLastSync(loadJSON('ctr:celoe:lastSync:' + profile.id, null))
   }, [profile?.id])
 
+  const importCeloeTimeline = useCallback(async (rawJson) => {
+    if (profile?.role !== 'ketua') throw new Error('Impor Timeline hanya bisa dilakukan oleh Ketua Kelas.')
+    if (store?.mode !== 'firebase') throw new Error('Firebase belum aktif. Impor bersama memerlukan Firebase.')
+    let payload
+    try { payload = JSON.parse(rawJson) } catch {
+      throw new Error('JSON Timeline tidak valid. Salin respons JSON lengkap dari CeLOE.')
+    }
+    const roots = Array.isArray(payload) ? payload : [payload]
+    const events = roots.flatMap((root) => root?.data?.events || root?.events || [])
+    if (!events.length) throw new Error('Tidak ditemukan daftar events pada JSON. Pastikan yang ditempel adalah respons Timeline CeLOE.')
+    const deadlines = events.filter((event) =>
+      event && (event.eventtype === 'close' || /\b(closes|deadline|due)\b/i.test(event.name || event.activitystr || '')) &&
+      Number.isFinite(Number(event.timestart || event.timesort)) &&
+      (event.activityname || event.name)
+    )
+    if (!deadlines.length) throw new Error('Tidak ada event tenggat yang cocok. Pastikan respons Timeline memuat eventtype close.')
+    let importedCount = 0
+    for (const event of deadlines) {
+      const timestamp = Number(event.timestart || event.timesort)
+      const deadline = new Date(timestamp * 1000)
+      if (Number.isNaN(deadline.getTime())) continue
+      const title = String(event.activityname || event.name || 'Tugas CeLOE').replace(/\s+(closes|deadline|due)$/i, '').trim().slice(0, 200)
+      const course = String(event.course?.fullname || event.course?.shortname || 'CeLOE').slice(0, 160)
+      const id = 'celoe-timeline-' + String(event.id || (course + '-' + title + '-' + timestamp)).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 140)
+      await store.set('tasks', id, {
+        title, course,
+        description: 'Tenggat diimpor dari Timeline CeLOE. Data diperbarui saat Ketua Kelas mengimpor ulang respons Timeline.',
+        deadline: deadline.toISOString(), priority: 'medium', source: 'celoe-timeline',
+        sourceEventId: String(event.id || ''),
+        sourceUrl: typeof event.url === 'string' && event.url.startsWith('https://lms.telkomuniversity.ac.id/') ? event.url : '',
+        createdBy: profile.id, updatedAt: new Date().toISOString(),
+      })
+      importedCount++
+    }
+    if (!importedCount) throw new Error('Tidak ada deadline valid yang berhasil diimpor.')
+    return importedCount
+  }, [profile, store])
+
   const saveCeloeCalendarUrl = useCallback((url) => {
     const clean = url.trim()
     setCeloeCalendarUrlState(clean)
@@ -355,7 +393,7 @@ export function AppProvider({ children }) {
     theme, store, ready: !!store, mode: store?.mode, online,
     profile, role: profile?.role, login, logout,
     tasks: allTasks, announcements, annLoaded, students, completions,
-    celoeCalendarUrl, saveCeloeCalendarUrl, syncCeloeCalendar, celoeSyncing, celoeLastSync,
+    celoeCalendarUrl, saveCeloeCalendarUrl, syncCeloeCalendar, celoeSyncing, celoeLastSync, importCeloeTimeline,
     isDone, toggleDone, progressByTask,
     saveTask, deleteTask, saveAnnouncement, deleteAnnouncement, togglePin,
     annSeenAt, markAnnouncementsSeen, unreadAnnouncements,
