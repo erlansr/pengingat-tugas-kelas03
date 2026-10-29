@@ -131,7 +131,7 @@ Bot lokal ini membaca respons Timeline dari browser yang kamu login sendiri, lal
 
 1. Pastikan Firebase sudah dikonfigurasi di Vercel dan `FIREBASE_SERVICE_ACCOUNT_JSON` aktif.
 2. Di Vercel → Project → Settings → Environment Variables, tambahkan `CELOE_BOT_TOKEN` dengan token acak panjang yang kamu buat sendiri. Jangan gunakan token contoh.
-3. Di repo lokal, jalankan `npm install` lalu `npx playwright install chromium`.
+3. Di repo lokal, jalankan `npm install`, `npm install --no-save playwright`, lalu `npx playwright install chromium`. Playwright hanya diperlukan untuk bot lokal, bukan build/deploy aplikasi.
 4. Salin `.env.bot.example` menjadi `.env.bot.local`, isi `CELOE_BOT_ENDPOINT` dengan domain Vercel kamu dan isi `CELOE_BOT_TOKEN` dengan nilai yang sama seperti di Vercel. File `.env.bot.local` tidak boleh di-commit.
 5. Jalankan `npm run celoe:bot`. Browser akan terbuka; login CeLOE secara manual bila diminta. Buka halaman Timeline/Kalender, lalu biarkan browser terbuka.
 6. Endpoint Vercel akan menyimpan event tenggat yang terdeteksi ke koleksi `tasks`. Periksa daftar tugas di aplikasi setelah bot mendeteksi respons Timeline.
