@@ -123,3 +123,17 @@ public/
 - Nama kelas: `VITE_CLASS_NAME` di `.env`.
 - Warna: token CSS di `src/index.css` (`:root` untuk terang, `.dark` untuk gelap).
 - Waktu pengingat: `LEAD_OPTIONS` di `src/lib/constants.js`.
+
+
+## Bot otomatis Timeline CeLOE (beta)
+
+Bot lokal ini membaca respons Timeline dari browser yang kamu login sendiri, lalu menyimpan deadline ke Firestore agar dibagikan ke kelas. Bot tidak menyimpan password, cookie, atau session key. Browser harus tetap terbuka dan komputer aktif; hentikan dengan Ctrl+C.
+
+1. Pastikan Firebase sudah dikonfigurasi di Vercel dan `FIREBASE_SERVICE_ACCOUNT_JSON` aktif.
+2. Di Vercel → Project → Settings → Environment Variables, tambahkan `CELOE_BOT_TOKEN` dengan token acak panjang yang kamu buat sendiri. Jangan gunakan token contoh.
+3. Di repo lokal, jalankan `npm install` lalu `npx playwright install chromium`.
+4. Salin `.env.bot.example` menjadi `.env.bot.local`, isi `CELOE_BOT_ENDPOINT` dengan domain Vercel kamu dan isi `CELOE_BOT_TOKEN` dengan nilai yang sama seperti di Vercel. File `.env.bot.local` tidak boleh di-commit.
+5. Jalankan `npm run celoe:bot`. Browser akan terbuka; login CeLOE secara manual bila diminta. Buka halaman Timeline/Kalender, lalu biarkan browser terbuka.
+6. Endpoint Vercel akan menyimpan event tenggat yang terdeteksi ke koleksi `tasks`. Periksa daftar tugas di aplikasi setelah bot mendeteksi respons Timeline.
+
+**Catatan beta:** bot mengandalkan respons Moodle bernama `core_calendar_get_action_events_by_timesort`; bila CeLOE mengganti halaman atau endpoint, bot mungkin tidak menemukan event. Uji dahulu dengan beberapa tugas dan pastikan tenggat cocok. Gunakan hanya akun CeLOE milikmu sendiri dan sesuai aturan kampus. Jangan commit token, file sesi browser, atau kredensial.
