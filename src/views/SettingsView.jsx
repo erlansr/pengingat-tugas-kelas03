@@ -1,4 +1,4 @@
-import { Bell, BellOff, Cloud, Database, Download, LogOut, Monitor, Moon, RotateCcw, Smartphone, Sun, RefreshCw, Trash2 } from 'lucide-react'
+import { Bell, BellOff, Cloud, Database, Download, LogOut, Monitor, Moon, RotateCcw, Smartphone, Sun, RefreshCw, Trash2, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useApp } from '../context'
 import { useInstall } from '../hooks/useInstall'
@@ -20,10 +20,12 @@ export default function SettingsView() {
   const {
     profile, role, logout, theme, reminders, setReminders, permission, enableNotifications,
     pushToast, mode, online, setGuideOpen, resetLocalData,
-    celoeCalendarUrl, saveCeloeCalendarUrl, syncCeloeCalendar, celoeSyncing, celoeLastSync,
+    celoeCalendarUrl, saveCeloeCalendarUrl, syncCeloeCalendar, celoeSyncing, celoeLastSync, importCeloeTimeline,
   } = useApp()
   const install = useInstall()
   const [calendarDraft, setCalendarDraft] = useState(celoeCalendarUrl)
+  const [timelineJson, setTimelineJson] = useState('')
+  const [timelineImporting, setTimelineImporting] = useState(false)
   useEffect(() => setCalendarDraft(celoeCalendarUrl), [celoeCalendarUrl])
 
   const toggleReminders = async (on) => {
@@ -165,6 +167,43 @@ export default function SettingsView() {
         )}
         <p className="mt-2 text-xs text-muted">Jangan bagikan Calendar URL. URL ini memberi akses ke kalender pribadi Anda.</p>
       </Section>
+
+      {role === 'ketua' && (
+        <Section title="Impor deadline Timeline CeLOE">
+          <p className="mb-3 text-sm text-muted">
+            Tempel respons JSON Timeline dari CeLOE untuk membagikan tenggat ke seluruh kelas lewat Firebase. Ini impor manual, bukan login LMS otomatis; impor ulang setelah Timeline berubah.
+          </p>
+          <label htmlFor="celoe-timeline-json" className="mb-1.5 block text-sm font-semibold">JSON respons Timeline</label>
+          <textarea
+            id="celoe-timeline-json"
+            value={timelineJson}
+            onChange={(e) => setTimelineJson(e.target.value)}
+            placeholder='Tempel JSON yang memuat data.events di sini'
+            className="min-h-36 w-full rounded-lg border border-line bg-surface p-3 font-mono text-xs outline-none focus:border-accent focus:ring-2 focus:ring-accent/25"
+            spellCheck={false}
+          />
+          <Button
+            className="mt-3"
+            disabled={timelineImporting || !timelineJson.trim() || mode !== 'firebase'}
+            onClick={async () => {
+              setTimelineImporting(true)
+              try {
+                const count = await importCeloeTimeline(timelineJson)
+                pushToast({ title: 'Deadline dibagikan', body: count + ' tenggat dari Timeline tersimpan di Firebase dan akan muncul di perangkat kelas.' })
+                setTimelineJson('')
+              } catch (error) {
+                pushToast({ tone: 'danger', title: 'Impor Timeline gagal', body: error.message || 'Periksa JSON dan coba lagi.' })
+              } finally {
+                setTimelineImporting(false)
+              }
+            }}
+          >
+            <Upload className="h-4 w-4" />{timelineImporting ? 'Mengimpor…' : 'Impor dan bagikan deadline'}
+          </Button>
+          {mode !== 'firebase' && <p className="mt-2 text-sm text-danger">Firebase belum aktif. Deadline tidak bisa dibagikan ke perangkat lain.</p>}
+          <p className="mt-2 text-xs text-muted">Jangan tempel atau bagikan URL kalender pribadi, cookie, password, token login, atau nilai sesskey. JSON hanya dipakai untuk mengambil nama tugas, mata kuliah, waktu tenggat, dan tautan aktivitas LMS.</p>
+        </Section>
+      )}
 
       <Section title="Data & sinkronisasi">
         <div className="flex items-start gap-3 text-sm">
